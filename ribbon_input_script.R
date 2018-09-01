@@ -12,15 +12,15 @@ x <- c("sqldf", "tidyverse", "RcppRoll", "ggthemes", "moments", "gridExtra", "br
 lapply(x, require, character.only = TRUE) ##applying the function require to each point in the vector x
 
 #IMPORTING geo INFO
-geo_table <- as_tibble(read.csv("C:/Users/bkennedy/Dropbox/COCA/DATA/GMRI_aggregated data/geo_table.csv", header = TRUE))
+geo_table <- as_tibble(read.csv("C:/Users/brian/Dropbox/COCA/DATA/GMRI_aggregated data/geo_table.csv", header = TRUE))
   
 #importing raw cfders_data and processing
     #understanding is that this cfders is a. infaltion adjusted, and b. sourced from OG SAS script which needs to 
     #be imported into R 
     #current location of SAS script: \\LAZ\Shared\Research\2015_2018_COCA\2_Data\IMPLAN\study area data\sunion of the cfders.egp
         #PROGRAM trimming CFDERS
-cfders_raw <- as_tibble(read.csv("C:/Users/bkennedy/Dropbox/COCA/DATA/GMRI_aggregated data/cfders/cfders_div.csv", header = TRUE)) %>% 
-  filter(YEAR > 2003, PORT_STATE %in% c('ME', 'NH', 'MA', 'RI', 'CT', 
+cfders_raw <- as_tibble(read.csv("C:/Users/brian/Dropbox/COCA/DATA/GMRI_aggregated data/cfders/cfders_div.csv", header = TRUE)) %>% 
+  filter(PORT_STATE %in% c('ME', 'NH', 'MA', 'RI', 'CT', 
                                         'NY', 'NJ', 'DE', 'MD', 'VA', 'NC')) %>% 
      mutate( mega_subregion = case_when(                                 
       PORT_STATE %in% c('ME', 'NH') ~ 'Northern New England',
@@ -161,8 +161,7 @@ port_region <- cfders_raw %>%
              rev_var = roll_sd(total_value, 3, na.rm = TRUE, align = "right", fill = NA),
              rev_mean = roll_mean(total_value, 3, na.rm = TRUE, align = "right", fill = NA),
              rev_cv = rev_var / rev_mean ) %>%
-          filter(port_tidy %in% primary_port_list$port_tidy,
-                 year > 2004)
+          filter(port_tidy %in% primary_port_list$port_tidy)
           
   port_analysis_summary <- port_processing %>% 
     group_by(port_tidy) %>% 
@@ -200,6 +199,6 @@ port_region <- cfders_raw %>%
     grid.arrange(a, b, c, d, nrow=2)   
   
 ###ANALYSIS FILE EXPORT: writing boat analysis raw data file####
-write.csv(boat_port_input, "C:/Users/bkennedy/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input.csv")
+write.csv(boat_port_input, "C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input.csv")
   
   
