@@ -84,9 +84,11 @@ input <- read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo
   full_reg <- lm(cv_revenue ~ avg_index + I(avg_index^2) + port_index + I(port_index^2) + 
                       avg_log_value + log(port_value) + mega_subregion, input)
     
-    #full script results
+    #full regression results table
     sjt.lm(full_reg,  emph.p = TRUE, digits.est = 3)
 
+    #full regression results plotted
+    plot_model(full_reg)
     
   #using leaps to 'select' best model
     #picking best model via an all-subsets regression using the leaps() package

@@ -89,6 +89,7 @@ port_region <- cfders_raw %>%
   boat_processing <- left_join(boat_index_calc, primary_port, by = "HULLNUM") %>% 
     group_by(HULLNUM) %>% 
       mutate(
+        log_total_value = log(total_value),
         avg_value = mean(total_value),
         yr_cnt = n_distinct(year),
         growth = ((total_value - lag(total_value)) / lag(total_value))*100) %>% 
@@ -107,6 +108,8 @@ port_region <- cfders_raw %>%
       avg_value = mean(total_value),
       avg_log_value = mean(log(total_value)),
       cv_revenue = sd(total_value) / mean(total_value),
+      log_cv_revenue = log(cv_revenue),
+      cv_log_revenue = sd(log_total_value) / mean(log_total_value),
       avg_growth = mean(growth),
       sd_growth = sd(growth),  ##calculated but will not use
       avg_index = mean(index),
@@ -121,7 +124,7 @@ port_region <- cfders_raw %>%
                          levels = c("$5,000-$50,000","$50,000-$100,000","$100,000-$500,000", 
                                     "$500,000-$1,000,000", "> $1,000,000"))) %>%   ###port level information 
         distinct(HULLNUM, port_tidy, mega_subregion, yr_cnt, avg_value, avg_log_value,
-                 cv_revenue, avg_growth, sd_growth, avg_index, avg_pport, value_cat)
+                 cv_revenue, log_cv_revenue, cv_log_revenue, avg_growth, sd_growth, avg_index, avg_pport, value_cat)
   #primary port list
   primary_port_list <- primary_port %>% ungroup() %>% 
     select(port_tidy) %>% 
@@ -157,7 +160,9 @@ port_region <- cfders_raw %>%
   
   port_processing <- port_index_calc %>% 
     group_by(port_tidy) %>% 
-      mutate(growth = ((total_value - lag(total_value)) / lag(total_value))*100,
+      mutate(
+             log_total_value = log(total_value),
+             growth = ((total_value - lag(total_value)) / lag(total_value))*100,
              rev_var = roll_sd(total_value, 3, na.rm = TRUE, align = "right", fill = NA),
              rev_mean = roll_mean(total_value, 3, na.rm = TRUE, align = "right", fill = NA),
              rev_cv = rev_var / rev_mean ) %>%
@@ -172,6 +177,8 @@ port_region <- cfders_raw %>%
       log_avg_value = log(avg_value),
       avg_growth = mean(growth),
       cv_revenue = sd(total_value) / mean(total_value),
+      log_cv_revenue = log(cv_revenue),
+      cv_log_revenue = sd(log_total_value) / mean(log_total_value),
       sd_growth = sd(growth)) %>% 
         rename(port_index = avg_index, port_yr = yr_cnt, port_value = avg_value, 
                port_log_value = log_avg_value, port_growth = avg_growth, 
