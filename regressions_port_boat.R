@@ -6,27 +6,35 @@ x <- c("sqldf", "tidyverse", "RcppRoll", "ggthemes", "moments",
 lapply(x, require, character.only = TRUE)
 
 
-input_alt <- read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") %>% 
+input_alt <- read.csv("C:/Users/bkennedy/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") %>% 
   mutate(
     log_boat_index = log(avg_index_boat),
     value_cat = factor(value_cat, 
                        levels = c("$5,000-$100,000","$100,000-$500,000", 
-                                  "$500,000-$1,000,000", "> $1,000,000")),
+                                  "> $500,000")),
+    value_cat_port = factor(value_cat_port, 
+                            levels = c("$15,000 - 500,000",
+                                        "$500,000-$3,000,000", "> $3,000,000")),
     mega_subregion = factor(mega_subregion, 
                             levels = c("Northern New England", "Southern New England",
-                                       "Northern Mid Atlantic","Southern Mid Atlantic")))
+                                       "Northern Mid Atlantic","Southern Mid Atlantic"))) %>% na.omit()
+
+
+#summary stats by sub-region
+input_alt %>% group_by(mega_subregion) %>% 
+  summarise(sd_index = sd(avg_index_boat),
+            sd_rev = sd(cv_revenue_boat),
+            median_inex = median(avg_index_boat),
+            q25_index = quantile(avg_index_boat, .25),
+            q75_index = quantile(avg_index_boat, .75),
+            q25_rev = quantile(cv_revenue_boat, .25),
+            q75_rev = quantile(cv_revenue_boat, .75))
+
+
+sqldf("select count(distinct port_tidy) from input_alt where port_tidy like '%_NJ%'")
+
 
 #BOAT REG
-
-library(caret)
-
-bc_boat <- BoxCoxTrans(input_alt$avg_index_boat)
-
-data.frame(bc_boat)
-
-
-
-
 
 #model selection 
 leaps_clean_boat <- regsubsets(log_cv_revenue_adj_boat ~ avg_index_boat + I(avg_index_boat^2) +
@@ -38,22 +46,29 @@ plot(leaps_clean_boat, scale = "bic")
   clean_boat <- lm(log_cv_revenue_adj_boat ~ avg_index_port + log_boat_index + I(log_boat_index^2) + value_cat + mega_subregion, 
                     data = input_alt)
   
+  #adding cubic term
   clean_boat_lm <- lm(log_cv_revenue_adj_boat ~ avg_index_port + avg_index_boat + I(avg_index_boat^2) + 
                         I(avg_index_boat^3) + value_cat + mega_subregion, data = input_alt)
   
+  #adding cubic term and logging index variable
   clean_boat_lm_loglog <- lm(log_cv_revenue_adj_boat ~ avg_index_port + log_boat_index + I(log_boat_index^2) + 
                         I(log_boat_index^3) + value_cat + mega_subregion, data = input_alt)
   
   
-    summary(clean_boat_lm)
+  summary(clean_boat_lm)
+    
+  summary(clean_boat_lm_loglog)
   
   plot(clean_boat_lm)
+  
+  plot(clean_boat_lm_loglog)
+  
   
   sample <- predict(clean_boat_lm, type = "response")
   
 
-  
   ##generating preduction friendly data frame 
+  library(ggeffects)
   boat_df <- ggpredict(clean_boat_lm, terms = c("avg_index_boat"))
 
   boat_loglog <- ggpredict(clean_boat_lm_loglog, terms = c("log_boat_index"))
@@ -76,22 +91,21 @@ grid.arrange(a,b, nrow=2)
   
   
   #reg table
-  tab_model(clean_boat, title = "Vessel Level Regression Ouput (p-value: < 2.2e-16)",
+  tab_model(clean_boat_lm, title = "Vessel Level Regression Ouput (p-value: < 2.2e-16)",
             show.p = TRUE)
   #reg results visual
-  plot_model(clean_boat, show.values = TRUE, value.offset = .3)
+  plot_model(clean_boat_lm, show.values = TRUE, value.offset = .3)
   
   #anova table
-  anov_boat <- anova(clean_boat)
+  anov_boat <- anova(clean_boat_lm)
   dfr_boat <- data.frame(anov_boat)
   kable(dfr_boat, caption="Anova table for the basic *port* model")
   
   #diagnostics
-  plot(clean_boat)
+  plot(clean_boat_lm)
   
 #PORT REG
-  
-  #FIX dublicate observations 
+
   #aggregating data 
   #aggregated version of port data-set, vessel diversity is summarised by weighted mean 
   input_agg <- input_alt %>% 
@@ -120,7 +134,7 @@ duh <-   input_agg %>% distinct(port_tidy)
   #reg outputs visual
   plot_model(agg_port, show.values = TRUE, value.offset = .3)
   
-  
   #diagnostics
   plot(agg_port)
+
   
