@@ -117,13 +117,11 @@ port_region <- cfders_raw %>%
       avg_index = mean(index),
       avg_pport = mean(proportion) * 100, #% vaught at primary port, a measure of transience
       value_cat = case_when(
-        avg_value > 1000000 ~ "> $1,000,000",
-        avg_value > 500000 ~ "$500,000-$1,000,000",
+        avg_value > 500000 ~ "> $500,000",
         avg_value > 100000 ~ "$100,000-$500,000",
         avg_value > 5000 ~ "$5,000-$100,000"),
       value_cat = factor(value_cat, 
-                         levels = c("$5,000-$100,000","$100,000-$500,000", 
-                                    "$500,000-$1,000,000", "> $1,000,000"))) %>%   ###port level information 
+                         levels = c("$5,000-$100,000","$100,000-$500,000", "> $500,000"))) %>%   ###port level information 
         distinct(HULLNUM, port_tidy, mega_subregion, yr_cnt, avg_value, avg_value1000_boat, avg_log_value,
                  cv_revenue, log_cv_revenue_boat, log_cv_revenue_adj_boat, cv_log_revenue_boat, avg_index, avg_pport, value_cat) %>% 
           rename(yr_cnt_boat = yr_cnt, avg_value_boat = avg_value, avg_log_value_boat = avg_log_value,
@@ -191,10 +189,9 @@ port_region <- cfders_raw %>%
           value_cat_port = case_when(
             avg_value > 3000000 ~ "> $3,000,000",
             avg_value > 500000 ~ "$500,000-$3,000,000",
-            avg_value > 150000 ~ "$150,000-$500,000",
-            avg_value > 15000 ~ "$15,000 - $150,000"),
+            avg_value > 15000 ~ "$15,000 - 500,000"),
           value_cat_port = factor(value_cat_port, 
-                             levels = c("$15,000 - $150,000","$150,000-$500,000", 
+                             levels = c("$15,000 - 500,000",
                                         "$500,000-$3,000,000", "> $3,000,000")))%>% 
         rename(avg_index_port = avg_index, yr_cnt_port = yr_cnt, avg_value_port = avg_value, 
                log_avg_value_port = log_avg_value, 
@@ -208,9 +205,17 @@ summary(port_analysis_summary$avg_value_port)
 #ANALYSIS DATASET ####  
   #interpretation reference: http://home.wlu.edu/~gusej/econ398/notes/logRegressions.pdf
   
+  #filtering step ID'd by below analyis 
+
   boat_port_input_temp <- left_join(boat_analysis_summary, port_analysis_summary,
-                               by = c("port_tidy" = "port_tidy"))
-  
+                               by = c("port_tidy" = "port_tidy")) %>% 
+    filter(avg_value_port > 14999)
+
+sqldf("select distinct port_tidy from boat_port_input_temp")
+sqldf("select distinct port_tidy, cv_revenue_port from boat_port_input_temp")
+
+
+
   #assessment of normality for cv revenues 
   a <- ggplot(boat_port_input_temp, aes(avg_index_boat, cv_revenue_boat)) + geom_boxplot()
   b <- ggplot(boat_port_input_temp, aes(avg_index_port, cv_revenue_port)) + geom_boxplot()
@@ -237,8 +242,7 @@ summary(port_analysis_summary$avg_value_port)
   
   grid.arrange(a_cv_log, a_logcv, a_logcv_adj, b_cv_log, b_logcv, b_logcv_adj, nrow=2)  
     
-  write.csv(boat_port_input_temp, "C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") %>% 
-    filter(avg_value_port > 14999)
+  write.csv(boat_port_input_temp, "C:/Users/bkennedy/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") 
   
   
     
