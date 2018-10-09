@@ -215,7 +215,6 @@ sqldf("select distinct port_tidy from boat_port_input_temp")
 sqldf("select distinct port_tidy, cv_revenue_port from boat_port_input_temp")
 
 
-
   #assessment of normality for cv revenues 
   a <- ggplot(boat_port_input_temp, aes(avg_index_boat, cv_revenue_boat)) + geom_boxplot()
   b <- ggplot(boat_port_input_temp, aes(avg_index_port, cv_revenue_port)) + geom_boxplot()
@@ -242,11 +241,9 @@ sqldf("select distinct port_tidy, cv_revenue_port from boat_port_input_temp")
   
   grid.arrange(a_cv_log, a_logcv, a_logcv_adj, b_cv_log, b_logcv, b_logcv_adj, nrow=2)  
     
-  write.csv(boat_port_input_temp, "C:/Users/bkennedy/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") 
+  write.csv(boat_port_input_temp, "C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") 
   
-  
-    
-  
+
   
   #filtering based on visual inspection: goal is to get both cv's to be slightly normal
   boat_port_input <- boat_port_input_temp %>% filter(cv_revenue < 1.25, port_cv_revenue < .7, 
