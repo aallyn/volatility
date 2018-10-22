@@ -132,7 +132,8 @@ ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/boat_regplot.jpg", boat_r
     mutate(mean_boat_index = weighted.mean(avg_index_boat, avg_value_boat)) %>% 
     distinct(port_tidy, log_cv_revenue_adj_port, avg_index_port, mean_boat_index,
              value_cat_port, mega_subregion) %>% na.omit()
-  
+
+#counting number of ports to make sure there are no duplicates    
 duh <-   input_agg %>% distinct(port_tidy)
   View(duh)
   
@@ -179,7 +180,7 @@ boat_df_value <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4
 
 shelf_boat <-  ggplot(boat_df, aes(x, predicted)) + 
   geom_ribbon(data = boat_df, aes(ymin = conf.low, ymax = conf.high), 
-              alpha = .2, fill = "greyy70") +
+              alpha = .2, fill = "grey70") +
   labs(y = "Revenue Volatility", x = "Catch Diversity") +
   geom_point(data = input_alt, aes(avg_index_boat, log_cv_revenue_adj_boat), alpha = .05) +
   geom_line(size = 1) +
@@ -274,7 +275,7 @@ p_plot(port_df_value)
 #potnetial exists to replace dots with contours as a way to combat overplotting and 
   #give a more reasonable sense of where the 'center' of the data is 
   
-  https://www.statworx.com/at/blog/how-not-to-overplot/
+#  https://www.statworx.com/at/blog/how-not-to-overplot/
 
     ggplot(boat_df, aes(x, predicted)) + 
     geom_ribbon(data = boat_df, aes(ymin = conf.low, ymax = conf.high), 
@@ -296,4 +297,13 @@ p_plot(port_df_value)
     geom_point(data = input_alt, aes(avg_index_port, log_cv_revenue_adj_port), alpha = .05) +
     geom_line(size = 1) +
     theme_tufte()
+  
+##summary stats for input_alt and input_agg   
+library(psych)
+#port summary stats
+describe(input_agg)
+
+input_alt %>% 
+  dplyr::select(log_cv_revenue_adj_boat, avg_index_boat, avg_index_port, value_cat, mega_subregion) %>% 
+describe(.)
   
