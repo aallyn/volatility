@@ -101,6 +101,15 @@ port_region <- cfders_raw %>%
               !HULLNUM == "000000") %>% 
                 na.omit() ###eliminates NA rows, i.e. the first year for growth rate
   
+  #operation type inquiry
+boat_type <- boat_port_input_temp %>% filter(value_cat !="> $500,000", mega_subregion == "Southern Mid Atlantic") %>% 
+    distinct(HULLNUM)
+  
+boat_answer <- spp_boat_year %>% filter(HULLNUM %in% boat_type$HULLNUM) %>% 
+  group_by(spp) %>% 
+    summarise(
+      value_sum = sum(value))
+    
   #boat input dataset
   boat_analysis_summary <- boat_processing %>% 
     group_by(HULLNUM) %>% 
@@ -214,6 +223,11 @@ summary(port_analysis_summary$avg_value_port)
 sqldf("select distinct port_tidy from boat_port_input_temp")
 sqldf("select distinct port_tidy, cv_revenue_port from boat_port_input_temp")
 
+
+#value_cat / value_share 
+boat_port_input_temp %>% group_by(value_cat) %>% 
+  summarise(
+    sum = sum(avg_value_boat)) %>% na.omit()
 
   #assessment of normality for cv revenues 
   a <- ggplot(boat_port_input_temp, aes(avg_index_boat, cv_revenue_boat)) + geom_boxplot()
