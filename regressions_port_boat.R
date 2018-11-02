@@ -1,10 +1,13 @@
 
 
 x <- c("sqldf", "tidyverse", "RcppRoll", "ggthemes", "moments", 
-       "gridExtra", "broom", "viridis", "sjPlot", "jtools","ggstance", "MASS", "leaps", "ggeffects")
+       "gridExtra", "broom", "viridis", "sjPlot", "jtools",
+       "ggstance", "MASS", "leaps", "ggeffects",
+       "hrbrthemes")
 
 lapply(x, require, character.only = TRUE)
 
+options(scipen = 999)  #turning off scientific notation to control # of digits
 
 input_alt <-  read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") %>% 
   mutate(
@@ -71,6 +74,7 @@ plot(leaps_clean_boat, scale = "bic")
   
   summary(clean_boat_lm)
     
+  
   summary(clean_boat_lm_loglog)
   
   plot(clean_boat_lm)
@@ -172,85 +176,131 @@ number <- toString(seq(1, 8, by = .2))
   #input datasets for vessel level prediction plots
 boat_df <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]"))
 
+min(boat_df$predicted)
+
+
+
 boat_df_geo <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
                                                   "mega_subregion"))
 
 boat_df_value <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
                                                     "value_cat"))
 
+##figure generation
 shelf_boat <-  ggplot(boat_df, aes(x, predicted)) + 
   geom_ribbon(data = boat_df, aes(ymin = conf.low, ymax = conf.high), 
-              alpha = .2, fill = "grey70") +
-  labs(y = "Revenue Volatility", x = "Catch Diversity") +
-  geom_point(data = input_alt, aes(avg_index_boat, log_cv_revenue_adj_boat), alpha = .05) +
+              alpha = .2, color = "grey70") +
+  labs(y = "Rev. Volatility", x = "Catch Diversity") +
+  geom_point(data = input_alt, aes(avg_index_boat, log_cv_revenue_adj_boat), 
+             alpha = .2, size = .6) +
   geom_line(size = 1) +
-  theme_tufte()
+  theme_tufte(base_size = 10, base_family ="serif") +
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8)) 
+
 
 geo_boat <- ggplot(boat_df_geo, aes(x, predicted, group = group)) + 
   geom_ribbon(data = boat_df_geo, aes(ymin = conf.low, ymax = conf.high, group = group), 
-              alpha = .2, fill = "grey70") + 
-  labs(y = "Revenue Volatility", x = "Catch Diversity") +
-  geom_line(data = boat_df_geo, aes(x, predicted, group = group, linetype = group), size = 1) +  
-  theme_tufte() + 
+              alpha = .2, color = "grey70") + 
+  labs(y = "Rev. Volatility", x = "Catch Diversity") +
+  geom_line(data = boat_df_geo, aes(x, predicted, group = group, linetype = group), 
+            size = 1) +  
+    labs(linetype = "Region") +
+  guides(linetype = guide_legend(nrow = 2)) +
+  scale_linetype_manual(values=c("twodash", "solid", "dotted", "longdash"))+
+  theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-  guides(fill=guide_legend(title="Sub Region"))
+  scale_x_continuous(breaks = c(1,4,8)) +
+  scale_y_continuous(breaks = seq(2.5,5,.5), limits = c(2.5,5))
 
 value_boat <- ggplot(boat_df_value, aes(x, predicted, group = group)) + 
   geom_ribbon(data = boat_df_value, aes(ymin = conf.low, ymax = conf.high, group = group), 
-              alpha = .3,  fill = "grey70") + 
-    geom_line(data = boat_df_value, aes(x, predicted, group = group, linetype = group), size = 1) +
-  labs(y = "Revenue Volatility", x = "Catch Diversity") +
-  theme_tufte() +
+              alpha = .3,  color = "grey70") + 
+  labs(y = "Rev. Volatility", x = "Catch Diversity") +
+    geom_line(data = boat_df_value, aes(x, predicted, group = group, linetype = group), 
+              size = 1) +
+      labs(linetype = "Value Category") + #legend label
+  guides(linetype = guide_legend(nrow = 2)) + #break in legend label
+  scale_linetype_manual(values=c("twodash", "solid", "dotted"))+
+  theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-      guides(fill=guide_legend(title="Value Category"))
+  scale_x_continuous(breaks = c(1,4,8)) +
+  scale_y_continuous(breaks = seq(2.5,5,.5), limits = c(2.5,5))
 
+#combining plots together
+library(cowplot)
 
-boat_predict_temp <- grid.arrange(shelf_boat, geo_boat, value_boat, nrow = 3)
+#bottom row in nested plot
+boat_obj <- plot_grid(geo_boat, value_boat, labels = c("B", "C"))
 
+#full plot
+boat_predict <- plot_grid(shelf_boat, boat_obj, labels = c("A", ""), 
+          ncol = 1)
 
-ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/boat_predict_temp.jpg", boat_predict_temp)
+boat_predict
+
+ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/shelf_boat.jpg", boat_predict,
+       height = 6.25, width = 6.6, units = c("in"))
 #two step process, first create small fig fo rprojections then align it with bigger figure 
 
 #input datasets for port level prediction plots
 port_df <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]"))
 port_df_geo <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
                                                   "mega_subregion"))
-
 port_df_value <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
                                                     "value_cat_port"))
+
 
 #port plots
 
 shelf_port <-  ggplot(port_df, aes(x, predicted)) + 
+  geom_line(data = port_df, aes(x, predicted), 
+            size = 1) +  
   geom_ribbon(data = port_df, aes(ymin = conf.low, ymax = conf.high), 
-              alpha = .2, fill = "grey70") +
-  labs(y = "Revenue Volatility", x = "Catch Diversity") +
+              alpha = .2, color = "grey70") +
+  labs(y = "Rev. Volatility", x = "Catch Diversity") +
   geom_point(data = input_alt, aes(avg_index_port, log_cv_revenue_adj_port), alpha = .05) +
-  geom_line(size = 1) +
-  theme_tufte()
+  theme_tufte(base_size = 10, base_family ="serif") +
+    scale_x_continuous(breaks = seq(0,8,2))
 
 geo_port <- ggplot(port_df_geo, aes(x, predicted, group = group)) + 
   geom_ribbon(data = port_df_geo, aes(ymin = conf.low, ymax = conf.high, group = group), 
-              alpha = .2, fill = "grey70") + 
-  labs(y = "Revenue Volatility", x = "Catch Diversity") +
-  geom_line(data = port_df_geo, aes(x, predicted, group = group, linetype = group), size = 1) +  
-  theme_tufte() + 
+              alpha = .1, color = "grey70") + 
+  labs(y = "Rev. Volatility", x = "Catch Diversity") +
+  geom_line(data = port_df_geo, aes(x, predicted, group = group, linetype = group), 
+            size = 1) +  
+  labs(linetype = "Region")+
+  guides(linetype = guide_legend(nrow = 2)) + #break in legend label
+  scale_linetype_manual(values=c("twodash", "solid", "dotted", "longdash")) +
+  theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-  guides(fill=guide_legend(title="Sub Region"))
+  scale_x_continuous(breaks = c(1,4,8)) +
+  scale_y_continuous(breaks = seq(1.5,3.5,.5))
+
 
 value_port <- ggplot(port_df_value, aes(x, predicted, group = group)) + 
   geom_ribbon(data = port_df_value, aes(ymin = conf.low, ymax = conf.high, group = group), 
-              alpha = .3,  fill = "grey70") + 
-  geom_line(data = port_df_value, aes(x, predicted, group = group, linetype = group), size = 1) +
-  labs(y = "Revenue Volatility", x = "Catch Diversity") +
-  theme_tufte() +
+              alpha = .1,  color = "grey70") + 
+  geom_line(data = port_df_value, aes(x, predicted, group = group, linetype = group), 
+            size = 1) +
+  labs(linetype = "Value Category")+
+  guides(linetype = guide_legend(nrow = 2)) + #break in legend label
+  scale_linetype_manual(values=c("twodash", "solid", "dotted"))+
+  labs(y = "Rev. Volatility", x = "Catch Diversity") +
+  theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-  guides(fill=guide_legend(title="Value Category"))
+  scale_x_continuous(breaks = c(1,4,8)) +
+  scale_y_continuous(breaks = seq(1.5,3.5,.5))
+
+#bottom row in nested plot
+port_obj <- plot_grid(geo_port, value_port, labels = c("B", "C"))
+
+#full plot
+port_predict <- plot_grid(shelf_port, port_obj, labels = c("A", ""), 
+          ncol = 1)
 
 
-port_predict_temp <- grid.arrange(shelf_port, geo_port, value_port, nrow = 3)
-
-ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/port_predict_temp.jpg", port_predict_temp)
+ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/port_predict.jpg", 
+       port_predict, height = 6.25, width = 6.6, units = c("in"))
 
 
 
@@ -307,3 +357,36 @@ input_alt %>%
   dplyr::select(log_cv_revenue_adj_boat, avg_index_boat, avg_index_port, value_cat, mega_subregion) %>% 
 describe(.)
   
+##prediction table
+
+#generating sample index values
+#we want 1, 10/90, 25,75, 25,25,50, 50,50 60,40,
+
+index_examp <- read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/data/index_examples.csv")
+
+examp_total <- index_examp %>% 
+  group_by(group) %>% 
+  summarise(
+    number_total = sum(number))
+
+examp_int <- left_join(index_examp, examp_total, by = "group") %>% 
+  mutate(
+    temp_index = (number / number_total)^2) %>% 
+        group_by(group) %>% 
+            mutate(index = 1 / sum(temp_index)) %>% 
+              distinct(group, index, description)
+
+examp_int$index
+
+#prediction corresponding to index value
+
+boat_index_table <- ggpredict(clean_boat_lm, 
+                    terms = c("avg_index_boat [1, 2.0, 1.219512, 1.60, 2.666667, 3.0, 1.724138, 4.0, 5.0, 6.0, 7.0]"))
+
+boat_index_table
+
+
+port_index_table <- ggpredict(agg_port, 
+                              terms = c("avg_index_port [1, 2.0, 1.219512, 1.60, 2.666667, 3.0, 1.724138, 4.0, 5.0, 6.0, 7.0]"))
+
+port_index_table

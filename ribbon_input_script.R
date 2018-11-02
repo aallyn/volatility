@@ -221,7 +221,7 @@ summary(port_analysis_summary$avg_value_port)
     filter(avg_value_port > 14999)
 
 sqldf("select distinct port_tidy from boat_port_input_temp")
-sqldf("select distinct port_tidy, cv_revenue_port from boat_port_input_temp")
+sqldf("select distinct port_tidy, avg_index_port from boat_port_input_temp")
 
 
 #value_cat / value_share 
@@ -254,10 +254,15 @@ boat_port_input_temp %>% group_by(value_cat) %>%
           kurtosis(boat_port_input_temp$log_cv_revenue_adj_port) # 2.849933
   
   grid.arrange(a_cv_log, a_logcv, a_logcv_adj, b_cv_log, b_logcv, b_logcv_adj, nrow=2)  
-    
+  
+  #turning off scientific notation to control # of digits...
+  options(scipen = 999)  
+  
   write.csv(boat_port_input_temp, "C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") 
   
+  input_alt <- read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") 
 
+  
   
   #filtering based on visual inspection: goal is to get both cv's to be slightly normal
   boat_port_input <- boat_port_input_temp %>% filter(cv_revenue < 1.25, port_cv_revenue < .7, 
