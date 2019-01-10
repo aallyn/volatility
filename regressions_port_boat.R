@@ -20,7 +20,13 @@ input_alt <-  read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project
                                         "$500,000-$3,000,000", "> $3,000,000")),
     mega_subregion = factor(mega_subregion, 
                             levels = c("Northern New England", "Southern New England",
-                                       "Northern Mid Atlantic","Southern Mid Atlantic"))) %>% na.omit()
+                                       "Northern Mid Atlantic","Southern Mid Atlantic")),
+    mega_subregion_alt = case_when(
+      mega_subregion == "Northern New England" ~ "N. New England",
+      mega_subregion == "Southern New England" ~ "S. New England",
+      mega_subregion == "Northern Mid Atlantic" ~ "N. Mid Atlantic",
+      mega_subregion == "Southern Mid Atlantic" ~ "S. Mid Atlantic")) %>% 
+        na.omit()
 
 
 #summary stats for boats and ports
@@ -131,14 +137,18 @@ ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/boat_regplot.jpg", boat_r
 
   #aggregating data 
   #aggregated version of port data-set, vessel diversity is summarised by weighted mean 
+  #ocean city deleted due to abberant values
+  
   input_agg <- input_alt %>% 
     group_by(port_tidy) %>% 
     mutate(mean_boat_index = weighted.mean(avg_index_boat, avg_value_boat)) %>% 
     distinct(port_tidy, log_cv_revenue_adj_port, avg_index_port, mean_boat_index,
-             value_cat_port, mega_subregion) %>% na.omit()
+             value_cat_port, mega_subregion) %>% 
+                filter(!port_tidy == "OCEANCITY_MD") %>% 
+                  na.omit() 
 
 #counting number of ports to make sure there are no duplicates    
-duh <-   input_agg %>% distinct(port_tidy)
+duh <-   input_agg %>% distinct(port_tidy) 
   View(duh)
   
 #model selection 
@@ -148,7 +158,7 @@ duh <-   input_agg %>% distinct(port_tidy)
   plot(leaps_clean_port, scale = "bic")
   
 #regression form  
-  agg_port <- lm(log_cv_revenue_adj_port ~ avg_index_port + mean_boat_index + 
+agg_port <- lm(log_cv_revenue_adj_port ~ avg_index_port + mean_boat_index + 
                    value_cat_port + mega_subregion, input_agg)  
   
 #regression: output, table, and diagnostics 
@@ -173,15 +183,17 @@ ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/port_regplot.jpg", port_r
   #generating values to smooth line
 number <- toString(seq(1, 8, by = .2))
   
+
+geo_stuff <- input_alt %>% dplyr::distinct(mega_subregion_alt, mega_subregion)
+  
   #input datasets for vessel level prediction plots
 boat_df <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]"))
-
-min(boat_df$predicted)
-
-
-
+  
 boat_df_geo <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
-                                                  "mega_subregion"))
+                                                  "mega_subregion")) %>% 
+  left_join(., geo_stuff, by = c("group" = "mega_subregion")) %>% 
+  mutate(group = mega_subregion_alt) %>% 
+    dplyr::select(-mega_subregion_alt)
 
 boat_df_value <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
                                                     "value_cat"))
@@ -195,7 +207,7 @@ shelf_boat <-  ggplot(boat_df, aes(x, predicted)) +
              alpha = .2, size = .6) +
   geom_line(size = 1) +
   theme_tufte(base_size = 10, base_family ="serif") +
-  scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8)) 
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,7), limits = c(1,7)) 
 
 
 geo_boat <- ggplot(boat_df_geo, aes(x, predicted, group = group)) + 
@@ -209,7 +221,7 @@ geo_boat <- ggplot(boat_df_geo, aes(x, predicted, group = group)) +
   scale_linetype_manual(values=c("twodash", "solid", "dotted", "longdash"))+
   theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-  scale_x_continuous(breaks = c(1,4,8)) +
+  scale_x_continuous(breaks = c(1,3,5,7), limits = c(1,7)) +
   scale_y_continuous(breaks = seq(2.5,5,.5), limits = c(2.5,5))
 
 value_boat <- ggplot(boat_df_value, aes(x, predicted, group = group)) + 
@@ -223,7 +235,7 @@ value_boat <- ggplot(boat_df_value, aes(x, predicted, group = group)) +
   scale_linetype_manual(values=c("twodash", "solid", "dotted"))+
   theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-  scale_x_continuous(breaks = c(1,4,8)) +
+  scale_x_continuous(breaks = c(1,3,5,7), limits = c(1,7)) +
   scale_y_continuous(breaks = seq(2.5,5,.5), limits = c(2.5,5))
 
 #combining plots together
@@ -245,7 +257,11 @@ ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/shelf_boat.jpg", boat_pre
 #input datasets for port level prediction plots
 port_df <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]"))
 port_df_geo <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
-                                                  "mega_subregion"))
+                                                  "mega_subregion")) %>% 
+              left_join(., geo_stuff, by = c("group" = "mega_subregion")) %>% 
+                  mutate(group = mega_subregion_alt) %>% 
+  dplyr::select(-mega_subregion_alt)
+              
 port_df_value <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
                                                     "value_cat_port"))
 
@@ -258,9 +274,9 @@ shelf_port <-  ggplot(port_df, aes(x, predicted)) +
   geom_ribbon(data = port_df, aes(ymin = conf.low, ymax = conf.high), 
               alpha = .2, color = "grey70") +
   labs(y = "Rev. Volatility", x = "Catch Diversity") +
-  geom_point(data = input_alt, aes(avg_index_port, log_cv_revenue_adj_port), alpha = .05) +
+  geom_point(data = input_agg, aes(avg_index_port, log_cv_revenue_adj_port), alpha = .4) +
   theme_tufte(base_size = 10, base_family ="serif") +
-    scale_x_continuous(breaks = seq(0,8,2))
+    scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8), limits = c(1,8))
 
 geo_port <- ggplot(port_df_geo, aes(x, predicted, group = group)) + 
   geom_ribbon(data = port_df_geo, aes(ymin = conf.low, ymax = conf.high, group = group), 
@@ -273,23 +289,23 @@ geo_port <- ggplot(port_df_geo, aes(x, predicted, group = group)) +
   scale_linetype_manual(values=c("twodash", "solid", "dotted", "longdash")) +
   theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-  scale_x_continuous(breaks = c(1,4,8)) +
-  scale_y_continuous(breaks = seq(1.5,3.5,.5))
+  scale_x_continuous(breaks = c(1,3,5,7), limits = c(1,8)) +
+  scale_y_continuous(breaks = seq(1.5,3.5,.5), limits = c(1,3.5))
 
 
 value_port <- ggplot(port_df_value, aes(x, predicted, group = group)) + 
-  geom_ribbon(data = port_df_value, aes(ymin = conf.low, ymax = conf.high, group = group), 
-              alpha = .1,  color = "grey70") + 
   geom_line(data = port_df_value, aes(x, predicted, group = group, linetype = group), 
             size = 1) +
+  geom_ribbon(data = port_df_value, aes(ymin = conf.low, ymax = conf.high, group = group), 
+              alpha = .1,  color = "grey70") + 
   labs(linetype = "Value Category")+
   guides(linetype = guide_legend(nrow = 2)) + #break in legend label
   scale_linetype_manual(values=c("twodash", "solid", "dotted"))+
   labs(y = "Rev. Volatility", x = "Catch Diversity") +
   theme_tufte(base_size = 10, base_family ="serif") +
   theme(legend.position = "bottom") +
-  scale_x_continuous(breaks = c(1,4,8)) +
-  scale_y_continuous(breaks = seq(1.5,3.5,.5))
+  scale_x_continuous(breaks = c(1,3,5,7), limits = c(1,8)) +
+  scale_y_continuous(breaks = seq(1.5,3.5,.5), limits = c(1,3.5))
 
 #bottom row in nested plot
 port_obj <- plot_grid(geo_port, value_port, labels = c("B", "C"))
@@ -298,9 +314,72 @@ port_obj <- plot_grid(geo_port, value_port, labels = c("B", "C"))
 port_predict <- plot_grid(shelf_port, port_obj, labels = c("A", ""), 
           ncol = 1)
 
+port_predict
 
 ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/port_predict.jpg", 
        port_predict, height = 6.25, width = 6.6, units = c("in"))
+
+##alt figure w/ lme trend approach, works need to add the shelf wide and label 
+
+#boats
+
+boat_df_value_2 <- boat_df_value %>% union(., boat_df) %>% 
+  mutate(
+    group = case_when(
+      group == 1 ~ "All Categories", #if not on the list you can't get it in
+      TRUE ~ as.character(group)),
+    Y = group)
+
+boat_cool <- ggplot(boat_df_value_2, aes(x = x, y = predicted)) + 
+  geom_line(data = transform(boat_df_value_2, group = NULL), aes(group = Y)
+            , alpha = 0.35) +   
+  geom_line(aes(group = group, colour = "black"), size = 1.2) + 
+  geom_smooth(size = NA, method = 'loess') +
+  scale_colour_identity() + 
+  facet_grid(~ group, scales="free_y") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1),
+        legend.position = 'none',
+        axis.title = element_blank()) +
+  scale_x_continuous(breaks = c(1,3,5,7), limits = c(1,7)) 
+
+boat_cool
+
+
+
+#ports
+
+port_df_value_2 <- port_df_value %>% union(., port_df) %>% 
+  mutate(
+    group = case_when(
+      group == 1 ~ "All Categories", #if not on the list you can't get it in
+      TRUE ~ as.character(group)),
+    Y = group)
+
+port_cool <- ggplot(port_df_value_2, aes(x = x, y = predicted)) + 
+  geom_line(data = transform(port_df_value_2, group = NULL), aes(group = Y)
+            , alpha = 0.35) +   
+  geom_line(aes(group = group, colour = "black"), size = 1.2) + 
+  geom_smooth(size = NA, method = 'loess') +
+  scale_colour_identity() + 
+  facet_grid(~ group, scales="free_y") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1),
+        legend.position = 'none',
+        axis.title = element_blank())
+
+require(cowplot)
+
+#rough output
+grid.arrange(boat_cool, port_cool)
+
+
+
+
+
+
+
+
 
 
 

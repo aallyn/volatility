@@ -31,7 +31,7 @@ cfders_raw <- as_tibble(read.csv("C:/Users/brian/Dropbox/COCA/DATA/GMRI_aggregat
                               levels = c("Northern New England", "Southern New England",
                                          "Northern Mid Atlantic","Southern Mid Atlantic"))) %>% 
         left_join(., geo_table, by = c("PORT" = "PORT_CODE")) %>% 
-          select(year = YEAR, port_tidy, port_code = PORT, mega_subregion, HULLNUM, VESSEL_NAME, value, spp) %>% 
+         dplyr::select(year = YEAR, port_tidy, port_code = PORT, mega_subregion, HULLNUM, VESSEL_NAME, value, spp) %>% 
             na.omit()
 
 #port / subregion list

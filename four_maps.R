@@ -1,4 +1,12 @@
 ####by sub region 
+x <- c("sqldf", "tidyverse", "RcppRoll", "ggthemes", "moments", 
+       "gridExtra", "broom", "viridis", "sjPlot", "jtools",
+       "ggstance", "MASS", "leaps", "ggeffects",
+       "cowplot")
+
+lapply(x, require, character.only = TRUE) ##applying the function require to each point in the vector x
+
+
 options(scipen = 999)  
 
 input_alt <- read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") %>%
