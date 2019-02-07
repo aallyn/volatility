@@ -3,7 +3,7 @@
 x <- c("sqldf", "tidyverse", "RcppRoll", "ggthemes", "moments", 
        "gridExtra", "broom", "viridis", "sjPlot", "jtools",
        "ggstance", "MASS", "leaps", "ggeffects",
-       "hrbrthemes")
+       "hrbrthemes", "cowplot")
 
 lapply(x, require, character.only = TRUE)
 
@@ -25,7 +25,15 @@ input_alt <-  read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project
       mega_subregion == "Northern New England" ~ "N. New England",
       mega_subregion == "Southern New England" ~ "S. New England",
       mega_subregion == "Northern Mid Atlantic" ~ "N. Mid Atlantic",
-      mega_subregion == "Southern Mid Atlantic" ~ "S. Mid Atlantic")) %>% 
+      mega_subregion == "Southern Mid Atlantic" ~ "S. Mid Atlantic"),
+    value_cat_alt = case_when(
+      value_cat == "$5,000-$100,000" ~ "$5K - $100K",
+      value_cat == "$100,000-$500,000" ~ "$100K - $500K",
+      value_cat == "> $500,000" ~ "500K"),
+    value_cat_port_alt = case_when(
+      value_cat_port == "$15,000 - 500,000" ~ "15K - 500K",
+      value_cat_port == "$500,000-$3,000,000" ~ "500K - 3,000K",
+      value_cat_port == "> $3,000,000" ~ "> $3,000K")) %>% 
         na.omit()
 
 
@@ -61,21 +69,21 @@ sqldf("select count(distinct port_tidy) from input_alt where port_tidy like '%_N
 
 #model selection 
 leaps_clean_boat <- regsubsets(log_cv_revenue_adj_boat ~ avg_index_boat + I(avg_index_boat^2) +
-                                 avg_index_port + value_cat + mega_subregion, input_alt, nbest = 5)
+                                 avg_index_port + value_cat + mega_subregion_alt, input_alt, nbest = 5)
 
 plot(leaps_clean_boat, scale = "bic")
 #regression: output, table, and diagnostics 
 
-  clean_boat <- lm(log_cv_revenue_adj_boat ~ avg_index_port + log_boat_index + I(log_boat_index^2) + value_cat + mega_subregion, 
+  clean_boat <- lm(log_cv_revenue_adj_boat ~ avg_index_port + log_boat_index + I(log_boat_index^2) + value_cat_alt + mega_subregion_alt, 
                     data = input_alt)
   
   #adding cubic term
   clean_boat_lm <- lm(log_cv_revenue_adj_boat ~ avg_index_port + avg_index_boat + I(avg_index_boat^2) + 
-                        I(avg_index_boat^3) + value_cat + mega_subregion, data = input_alt)
+                        I(avg_index_boat^3) + value_cat_alt + mega_subregion_alt, data = input_alt)
   
   #adding cubic term and logging index variable
   clean_boat_lm_loglog <- lm(log_cv_revenue_adj_boat ~ avg_index_port + log_boat_index + I(log_boat_index^2) + 
-                        I(log_boat_index^3) + value_cat + mega_subregion, data = input_alt)
+                        I(log_boat_index^3) + value_cat_alt + mega_subregion, data = input_alt)
   
   
   summary(clean_boat_lm)
@@ -143,7 +151,7 @@ ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/boat_regplot.jpg", boat_r
     group_by(port_tidy) %>% 
     mutate(mean_boat_index = weighted.mean(avg_index_boat, avg_value_boat)) %>% 
     distinct(port_tidy, log_cv_revenue_adj_port, avg_index_port, mean_boat_index,
-             value_cat_port, mega_subregion) %>% 
+             value_cat_port_alt, mega_subregion_alt) %>% 
                 filter(!port_tidy == "OCEANCITY_MD") %>% 
                   na.omit() 
 
@@ -159,7 +167,7 @@ duh <-   input_agg %>% distinct(port_tidy)
   
 #regression form  
 agg_port <- lm(log_cv_revenue_adj_port ~ avg_index_port + mean_boat_index + 
-                   value_cat_port + mega_subregion, input_agg)  
+                   value_cat_port_alt + mega_subregion_alt, input_agg)  
   
 #regression: output, table, and diagnostics 
   
@@ -190,13 +198,10 @@ geo_stuff <- input_alt %>% dplyr::distinct(mega_subregion_alt, mega_subregion)
 boat_df <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]"))
   
 boat_df_geo <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
-                                                  "mega_subregion")) %>% 
-  left_join(., geo_stuff, by = c("group" = "mega_subregion")) %>% 
-  mutate(group = mega_subregion_alt) %>% 
-    dplyr::select(-mega_subregion_alt)
+                                                  "mega_subregion_alt"))
 
 boat_df_value <- ggpredict(clean_boat_lm, terms = c("avg_index_boat [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
-                                                    "value_cat"))
+                                                    "value_cat_alt"))
 
 ##figure generation
 shelf_boat <-  ggplot(boat_df, aes(x, predicted)) + 
@@ -257,16 +262,13 @@ ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/shelf_boat.jpg", boat_pre
 #input datasets for port level prediction plots
 port_df <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]"))
 port_df_geo <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
-                                                  "mega_subregion")) %>% 
-              left_join(., geo_stuff, by = c("group" = "mega_subregion")) %>% 
-                  mutate(group = mega_subregion_alt) %>% 
-  dplyr::select(-mega_subregion_alt)
+                                                  "mega_subregion_alt"))
               
 port_df_value <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
-                                                    "value_cat_port"))
+                                                    "value_cat_port_alt"))
 
 
-#port plots
+#port plots, what i need
 
 shelf_port <-  ggplot(port_df, aes(x, predicted)) + 
   geom_line(data = port_df, aes(x, predicted), 
