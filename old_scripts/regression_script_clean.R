@@ -12,8 +12,8 @@ x <- c("sqldf", "tidyverse", "RcppRoll", "ggthemes", "moments", "gridExtra", "br
 lapply(x, require, character.only = TRUE) ##applying the function require to each point in the vector x
 
 #reading in analysis data 
-input <- read.csv("C:/Users/bkennedy/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input.csv")
-input_alt <- read.csv("C:/Users/bkennedy/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") %>% 
+input <- read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input.csv")
+input_alt <- read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project/redo/boat_port_input_temp.csv") %>% 
   mutate(
   value_cat = factor(value_cat, 
                      levels = c("$5,000-$100,000","$100,000-$500,000", 
