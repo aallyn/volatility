@@ -27,12 +27,12 @@ input_alt <-  read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project
       mega_subregion == "Northern Mid Atlantic" ~ "N. Mid Atlantic",
       mega_subregion == "Southern Mid Atlantic" ~ "S. Mid Atlantic"),
     value_cat_alt = case_when(
-      value_cat == "$5,000-$100,000" ~ "$5K - $100K",
-      value_cat == "$100,000-$500,000" ~ "$100K - $500K",
-      value_cat == "> $500,000" ~ "500K"),
+      value_cat == "$5,000-$100,000" ~ "$5K - 100K",
+      value_cat == "$100,000-$500,000" ~ "$100K - 500K",
+      value_cat == "> $500,000" ~ "> $500K"),
     value_cat_port_alt = case_when(
-      value_cat_port == "$15,000 - 500,000" ~ "15K - 500K",
-      value_cat_port == "$500,000-$3,000,000" ~ "500K - 3,000K",
+      value_cat_port == "$15,000 - 500,000" ~ "$15K - 500K",
+      value_cat_port == "$500,000-$3,000,000" ~ "$500K - 3,000K",
       value_cat_port == "> $3,000,000" ~ "> $3,000K")) %>% 
         na.omit()
 
