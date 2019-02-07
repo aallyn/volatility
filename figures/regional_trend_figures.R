@@ -123,9 +123,13 @@ region_trend <- ggplot(trend_input, aes(x = year, y = value)) +
 
 alt_trend_fig <- plot_grid(lme, region_trend, nrow = 2, labels = c("a", "b"),
                            rel_heights = 3)
-s
+
 ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/alt_trend_fig.jpg", alt_trend_fig,
        height = 192.75, width = 140, units = "mm")
+
+#saving to report directory for rmakrdown
+ggsave("C:/Users/brian/Dropbox/COCA--diversity/drafts/reports/alt_trend_fig.jpg", alt_trend_fig,
+       height = 4, width = 4, units = "in")
 
 #this is good first start, however I think i need to do it via 4
 #seperate figures so I can get better control of over axis and titles
