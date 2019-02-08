@@ -36,6 +36,7 @@ input_alt <-  read.csv("C:/Users/brian/Dropbox/COCA/Volatility Diversity_Project
       value_cat_port == "> $3,000,000" ~ "> $3,000K")) %>% 
         na.omit()
 
+write.csv(input_alt, "C:/Users/brian/Dropbox/COCA--diversity/drafts/reports/input_alt.csv")
 
 #summary stats for boats and ports
 input_alt %>% 
@@ -131,7 +132,10 @@ ggsave("C:/Users/brian/Dropbox/COCA--diversity/figures/boat_regplot.jpg", boat_r
              value_cat_port_alt, mega_subregion_alt) %>% 
                 filter(!port_tidy == "OCEANCITY_MD") %>% 
                   na.omit() 
-
+  
+  #writing to rmarkdown report folder
+  write.csv(input_agg, "C:/Users/brian/Dropbox/COCA--diversity/drafts/reports/input_agg.csv")
+  
 #model selection 
   leaps_clean_port <- regsubsets(log_cv_revenue_adj_port ~ avg_index_port + mean_boat_index + 
                                    value_cat_port + mega_subregion, input_agg, nbest = 5)
@@ -182,3 +186,29 @@ port_df_geo <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 
               
 port_df_value <- ggpredict(agg_port, terms = c("avg_index_port [1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6, 6.8, 7, 7.2, 7.4, 7.6, 7.8, 8]",
                                                     "value_cat_port_alt"))
+
+##Table Generation 
+library(stargazer)
+  #CONTENTS 
+    #descriptive stats by category variable
+    #descriptive stats 
+    #prediction table 
+    #regression table vessel
+    #regression table port
+
+table_input <- input_alt %>% 
+  dplyr::select(mega_subregion_alt, value_cat_alt, 
+                avg_value_boat, avg_index_boat, avg_index_port, 
+                log_cv_revenue_adj_boat)
+
+write.csv(table_input, "C:/Users/brian/Dropbox/COCA--diversity/drafts/reports/table_input.csv")
+
+write.c
+table_input <- data.frame(table_input)
+stargazer(table_input)
+
+stargazer(clean_boat_lm)
+
+
+stargazer::stargazer(table_input, 
+                     type = "html",       title = "Table with stargazer")
