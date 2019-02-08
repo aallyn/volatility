@@ -2,6 +2,8 @@
 
 ###hello andrew, it is great to see you commenting with such glee
 
+# Dear Sir, I write to you with great success. I Now see your changes. To do this, I followed the directions here: https://happygitwithr.com/upstream-changes.html. I am curious if I have to do this everytime...or if now I am automatically piped in to you and your repo such that I just have to do a "pull" or if I have to do the "git pull upstream master --ff-only" each time. So, let me know if you make some changes to this code and I will try to get em to my local copy. Thanks for working through some of this with me -- fun stuff, we are doing it Brian, we are doing it!!!
+
 x <- c("sqldf", "tidyverse", "RcppRoll", "ggthemes", "moments", 
        "gridExtra", "broom", "viridis", "sjPlot", "jtools",
        "ggstance", "MASS", "leaps", "ggeffects",
